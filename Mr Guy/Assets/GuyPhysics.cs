@@ -19,6 +19,8 @@ public class GuyPhysics : MonoBehaviour
     public const float MAX_FALL_SWIMMING = 10f;
     public const float MAX_SWIM_TIME = 0.2f;
 
+    public bool HasWaterShoes { get; set; }
+
     public bool MovingLeft { get; set; }
     public bool MovingRight { get; set; }
     public bool Jumping { get; set; }
@@ -138,7 +140,7 @@ public class GuyPhysics : MonoBehaviour
         if (jumpForgiving > 0 && !jumping || swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0))
         {
             jumpFlag = true;
-            rigidbody.velocity = new Vector2(rigidbody.velocity.x, swimming ? SWIM_POWER : JUMP_POWER);
+            rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, swimming ? SWIM_POWER : JUMP_POWER);
         }
         jumping = true;
     }

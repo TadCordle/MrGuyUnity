@@ -50,6 +50,7 @@
      <Compile Include="Assets\CameraZone.cs" />
      <Compile Include="Assets\GuyControls.cs" />
      <Compile Include="Assets\GuyPhysics.cs" />
+     <Compile Include="Assets\WaterShoesPickup.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
