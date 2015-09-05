@@ -7,11 +7,24 @@ public class GuyPhysics : MonoBehaviour
 {
     public const float MOVE_ACCEL_GROUND = 100f;
     public const float MAX_HSPEED_GROUND = 9f;
+
     public const float MAX_HSPEED_AIR = 6f;
     public const float JUMP_POWER = 17f;
     public const float UNJUMP_FORCE = 80f;
-
     public const float JUMP_FORGIVENESS = 0.08f;
+
+    public const float MAX_HSPEED_SWIMMING = 7f;
+    public const float MOVE_ACCEL_SWIMMING = 65f;
+    public const float SWIM_POWER = 10f;
+    public const float MAX_FALL_SWIMMING = 10f;
+    public const float MAX_SWIM_TIME = 0.2f;
+
+    public bool MovingLeft { get; set; }
+    public bool MovingRight { get; set; }
+    public bool Jumping { get; set; }
+
+    private bool swimming;
+    private float swimTime;
 
     private Rigidbody2D rigidbody;
     private Transform transform;
@@ -39,6 +52,7 @@ public class GuyPhysics : MonoBehaviour
     void Start()
     {
         rigidbody.drag = 0;
+        swimTime = MAX_SWIM_TIME;
         
         onGround = OnGround();
 
@@ -65,22 +79,28 @@ public class GuyPhysics : MonoBehaviour
 
         float closestRotation = transform.localRotation.eulerAngles.z;
         rigidbody.MoveRotation(Mathf.Lerp(closestRotation > 180 ? closestRotation - 360 : closestRotation, 0, 0.5f));
-        if (Input.GetKey(KeyCode.A))
+        if (MovingLeft)
             MoveLeft();
-        else if (Input.GetKey(KeyCode.D))
+        else if (MovingRight)
             MoveRight();
         else
             StopMoving();
 
-        if (onGround)
+        if (onGround || swimming)
         {
             if (rigidbody.velocity.x < -MAX_HSPEED_GROUND)
-                rigidbody.AddForce(Vector2.right * MOVE_ACCEL_GROUND / 3f);
+                rigidbody.AddForce(Vector2.right * (swimming ? MOVE_ACCEL_SWIMMING : MOVE_ACCEL_GROUND) / 3f);
             else if (rigidbody.velocity.x > MAX_HSPEED_GROUND)
-                rigidbody.AddForce(Vector2.left * MOVE_ACCEL_GROUND / 3f);
+                rigidbody.AddForce(Vector2.left * (swimming ? MOVE_ACCEL_SWIMMING : MOVE_ACCEL_GROUND) / 3f);
         }
 
-        if (Input.GetKey(KeyCode.W))
+        if (!onGround && swimming)
+        {   
+            if (rigidbody.velocity.y < -MAX_FALL_SWIMMING)
+                rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_FALL_SWIMMING);
+        }
+
+        if (Jumping)
             Jump();
         else
             jumping = false;
@@ -89,35 +109,36 @@ public class GuyPhysics : MonoBehaviour
         {
             rigidbody.AddForce(Vector2.down * UNJUMP_FORCE);
         }
+
+        if (swimming && swimTime > 0)
+        {
+            swimTime -= Time.deltaTime;
+        }
     }
 
-    public void MoveLeft()
+    private void MoveLeft()
     {
-        movingLeft = true;
-        if (rigidbody.velocity.x > -(onGround ? MAX_HSPEED_GROUND : MAX_HSPEED_AIR))
+        if (rigidbody.velocity.x > -(onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR)))
             rigidbody.AddForce(((leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left) * MOVE_ACCEL_GROUND);
     }
 
-    public void MoveRight()
+    private void MoveRight()
     {
-        movingRight = true;
-        if (rigidbody.velocity.x < (onGround ? MAX_HSPEED_GROUND : MAX_HSPEED_AIR))
+        if (rigidbody.velocity.x < (onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR)))
             rigidbody.AddForce(((rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right) * MOVE_ACCEL_GROUND);
     }
 
-    public void StopMoving()
+    private void StopMoving()
     {
-        movingLeft = false;
-        movingRight = false;
         rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, !onGround || jumping ? rigidbody.velocity.y : 0), (onGround ? 0.5f : 0.3f));
     }
 
-    public void Jump()
+    private void Jump()
     {
-        if (jumpForgiving > 0 && !jumping)
+        if (jumpForgiving > 0 && !jumping || swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0))
         {
             jumpFlag = true;
-            rigidbody.velocity = new Vector2(rigidbody.velocity.x, JUMP_POWER);
+            rigidbody.velocity = new Vector2(rigidbody.velocity.x, swimming ? SWIM_POWER : JUMP_POWER);
         }
         jumping = true;
     }
@@ -151,5 +172,24 @@ public class GuyPhysics : MonoBehaviour
             }
         }
         return groundCount > 0 && normals < 1.6f;
+    }
+
+    void OnTriggerStay2D(Collider2D collider)
+    {
+        if (collider.gameObject.CompareTag("Water"))
+        {
+            if (!swimming)
+                swimTime = MAX_SWIM_TIME;
+            swimming = true;
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D collider)
+    {
+        if (collider.gameObject.CompareTag("Water"))
+        {
+            swimTime = MAX_SWIM_TIME;
+            swimming = false;
+        }
     }
 }
