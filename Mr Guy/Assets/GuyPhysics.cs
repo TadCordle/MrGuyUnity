@@ -9,6 +9,9 @@ public class GuyPhysics : MonoBehaviour
     public const float MAX_HSPEED_GROUND = 9f;
     public const float MAX_HSPEED_AIR = 6f;
     public const float JUMP_POWER = 17f;
+    public const float UNJUMP_FORCE = 80f;
+
+    public const float JUMP_FORGIVENESS = 0.08f;
 
     private Rigidbody2D rigidbody;
     private Transform transform;
@@ -22,7 +25,9 @@ public class GuyPhysics : MonoBehaviour
     private bool rightTouchingGround, leftTouchingGround;
     private Vector2 currGroundDir;
 
-	// Use this for initialization
+    private bool jumping, jumpFlag;
+    private float jumpForgiving;
+    
 	void Awake () 
     {
         rigidbody = GetComponent<Rigidbody2D>();
@@ -33,16 +38,29 @@ public class GuyPhysics : MonoBehaviour
 
     void Start()
     {
+        rigidbody.drag = 0;
+        
         onGround = OnGround();
 
         movingLeft = false;
         movingRight = false;
+        jumping = false;
+        jumpFlag = false;
+        jumpForgiving = JUMP_FORGIVENESS;
     }
 	
-	// Update is called once per frame
-	void Update ()
+    void Update()
     {
+        if (!onGround)
+            jumpForgiving = Mathf.Max(0, jumpForgiving - Time.deltaTime);
+
         onGround = OnGround();
+        if (onGround)
+        {
+            jumpForgiving = JUMP_FORGIVENESS;
+            if (!jumping)
+                jumpFlag = false;
+        }
         collider_feet.sharedMaterial.friction = onGround ? 0.1f : 0f;
 
         float closestRotation = transform.localRotation.eulerAngles.z;
@@ -62,14 +80,20 @@ public class GuyPhysics : MonoBehaviour
                 rigidbody.AddForce(Vector2.left * MOVE_ACCEL_GROUND / 3f);
         }
 
-        if (Input.GetKeyDown(KeyCode.W))
+        if (Input.GetKey(KeyCode.W))
             Jump();
+        else
+            jumping = false;
+
+        if (jumpFlag && !jumping && rigidbody.velocity.y > 0f)
+        {
+            rigidbody.AddForce(Vector2.down * UNJUMP_FORCE);
+        }
     }
 
     public void MoveLeft()
     {
         movingLeft = true;
-        rigidbody.drag = 0;
         if (rigidbody.velocity.x > -(onGround ? MAX_HSPEED_GROUND : MAX_HSPEED_AIR))
             rigidbody.AddForce(((leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left) * MOVE_ACCEL_GROUND);
     }
@@ -77,7 +101,6 @@ public class GuyPhysics : MonoBehaviour
     public void MoveRight()
     {
         movingRight = true;
-        rigidbody.drag = 0;
         if (rigidbody.velocity.x < (onGround ? MAX_HSPEED_GROUND : MAX_HSPEED_AIR))
             rigidbody.AddForce(((rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right) * MOVE_ACCEL_GROUND);
     }
@@ -86,15 +109,17 @@ public class GuyPhysics : MonoBehaviour
     {
         movingLeft = false;
         movingRight = false;
-        rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, rigidbody.velocity - Vector2.right * rigidbody.velocity.x, (onGround ? 0.7f : 0.3f));
+        rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, !onGround || jumping ? rigidbody.velocity.y : 0), (onGround ? 0.5f : 0.3f));
     }
 
     public void Jump()
     {
-        if (onGround)
+        if (jumpForgiving > 0 && !jumping)
         {
+            jumpFlag = true;
             rigidbody.velocity = new Vector2(rigidbody.velocity.x, JUMP_POWER);
         }
+        jumping = true;
     }
 
     public bool OnGround()
