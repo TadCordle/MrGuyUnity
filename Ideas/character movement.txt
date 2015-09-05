@@ -1,0 +1,15 @@
+Walk/Run
+
+Jump
+ - Double?
+
+Roll
+
+Grab
+ - Ropes
+ - Ledges
+ - Objects
+
+Swim
+
+Attack?
