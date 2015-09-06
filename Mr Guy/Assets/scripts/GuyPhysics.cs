@@ -154,7 +154,7 @@ public class GuyPhysics : MonoBehaviour
         if (jumpForgiving > 0 && !jumping)
         {
             jumpFlag = true;
-            rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, JUMP_POWER);
+            rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, JUMP_POWER); // TODO: incorporate speed of platform
         }
         else if (swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0) && rigidbody.velocity.y < MAX_SWIM_VSPEED)
         {
