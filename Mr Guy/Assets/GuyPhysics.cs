@@ -15,8 +15,8 @@ public class GuyPhysics : MonoBehaviour
 
     public const float MAX_HSPEED_SWIMMING = 7f;
     public const float MOVE_ACCEL_SWIMMING = 65f;
-    public const float SWIM_POWER = 10f;
-    public const float MAX_FALL_SWIMMING = 10f;
+    public const float SWIM_POWER = 80f;
+    public const float MAX_SWIM_VSPEED = 10f;
     public const float MAX_SWIM_TIME = 0.2f;
 
     public bool HasWaterShoes { get; set; }
@@ -81,6 +81,7 @@ public class GuyPhysics : MonoBehaviour
 
         float closestRotation = transform.localRotation.eulerAngles.z;
         rigidbody.MoveRotation(Mathf.Lerp(closestRotation > 180 ? closestRotation - 360 : closestRotation, 0, 0.5f));
+        rigidbody.gravityScale = 3f;
         if (MovingLeft)
             MoveLeft();
         else if (MovingRight)
@@ -98,8 +99,8 @@ public class GuyPhysics : MonoBehaviour
 
         if (!onGround && swimming)
         {   
-            if (rigidbody.velocity.y < -MAX_FALL_SWIMMING)
-                rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_FALL_SWIMMING);
+            if (rigidbody.velocity.y < -MAX_SWIM_VSPEED)
+                rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED);
         }
 
         if (Jumping)
@@ -107,7 +108,7 @@ public class GuyPhysics : MonoBehaviour
         else
             jumping = false;
 
-        if (jumpFlag && !jumping && rigidbody.velocity.y > 0f)
+        if (jumpFlag && !jumping && rigidbody.velocity.y > 0f && !swimming)
         {
             rigidbody.AddForce(Vector2.down * UNJUMP_FORCE);
         }
@@ -132,16 +133,34 @@ public class GuyPhysics : MonoBehaviour
 
     private void StopMoving()
     {
-        rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, !onGround || jumping ? rigidbody.velocity.y : 0), (onGround ? 0.5f : 0.3f));
+        if (onGround)
+        {
+            if (!jumping)
+                rigidbody.gravityScale = 0f;
+            if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f)
+                rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, jumping ? rigidbody.velocity.y : 0), 0.5f);
+        }
+        else
+        {
+            if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f)
+                rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, rigidbody.velocity.y), 0.3f);
+            else
+                rigidbody.AddForce(-currGroundDir * MOVE_ACCEL_GROUND / 10f);
+        }
     }
 
     private void Jump()
     {
-        if (jumpForgiving > 0 && !jumping || swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0))
+        if (jumpForgiving > 0 && !jumping)
         {
             jumpFlag = true;
-            rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, swimming ? SWIM_POWER : JUMP_POWER);
+            rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, JUMP_POWER);
         }
+        else if (swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0) && rigidbody.velocity.y < MAX_SWIM_VSPEED)
+        {
+            rigidbody.AddForce(Vector2.up * SWIM_POWER);
+        }
+
         jumping = true;
     }
 
