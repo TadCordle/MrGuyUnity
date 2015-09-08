@@ -4,7 +4,8 @@ using System.Collections;
 public class CameraZone : MonoBehaviour 
 {
     public Transform focalPoint;
-    public float playerTracking;
+    public float playerTrackingX;
+    public float playerTrackingY;
     public float cameraZoom;
 
     private Transform player;
@@ -21,7 +22,8 @@ public class CameraZone : MonoBehaviour
     {
         if (collider.gameObject.CompareTag("Player"))
         {
-            camera.playerTracking = playerTracking;
+            camera.playerTrackingX = playerTrackingX;
+            camera.playerTrackingY = playerTrackingY;
             camera.target = focalPoint;
             camera.zoom = cameraZoom;
         }
@@ -31,7 +33,8 @@ public class CameraZone : MonoBehaviour
     {
         if (collider.gameObject.CompareTag("Player"))
         {
-            camera.playerTracking = 0;
+            camera.playerTrackingX = 0;
+            camera.playerTrackingY = 0;
             camera.target = player;
             camera.zoom = CameraFollow.DEFAULT_ZOOM;
         }

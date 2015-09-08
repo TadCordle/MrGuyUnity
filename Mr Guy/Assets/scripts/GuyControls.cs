@@ -18,5 +18,11 @@ public class GuyControls : MonoBehaviour
         guy.MovingRight = Input.GetKey(KeyCode.D);
 
         guy.Jumping = Input.GetKey(KeyCode.W);
+
+        if (Input.GetKeyDown(KeyCode.R))
+            Application.LoadLevel(Application.loadedLevel);
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+            Application.Quit();
 	}
 }
