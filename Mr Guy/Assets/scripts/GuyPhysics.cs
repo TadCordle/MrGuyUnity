@@ -24,6 +24,7 @@ public class GuyPhysics : MonoBehaviour
     public bool MovingLeft { get; set; }
     public bool MovingRight { get; set; }
     public bool Jumping { get; set; }
+    public bool GrabbingRope { get; set; }
 
     private bool swimming;
     private float swimTime;
@@ -42,9 +43,14 @@ public class GuyPhysics : MonoBehaviour
 
     private bool jumping, jumpFlag;
     private float jumpForgiving;
+
+    public GameObject ropeCollision;
+    public HingeJoint2D ropeHinge;
+    private bool holdingRope;
     
 	void Awake () 
     {
+        ropeCollision = null;
         rigidbody = GetComponent<Rigidbody2D>();
         transform = GetComponent<Transform>();
         collider_feet = transform.GetChild(0).GetChild(0).GetComponent<CircleCollider2D>();
@@ -89,6 +95,20 @@ public class GuyPhysics : MonoBehaviour
         else
             StopMoving();
 
+        if (GrabbingRope)
+        {
+            if (!holdingRope)
+            {
+                holdingRope = GrabRope();
+            }
+        }
+        else
+        {
+
+            ropeHinge.enabled = false;
+            holdingRope = false;
+        }
+
         if (onGround || swimming)
         {
             if (rigidbody.velocity.x < -MAX_HSPEED_GROUND)
@@ -103,12 +123,12 @@ public class GuyPhysics : MonoBehaviour
                 rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED);
         }
 
-        if (Jumping)
+        if (Jumping && !holdingRope)
             Jump();
         else
             jumping = false;
 
-        if (jumpFlag && !jumping && rigidbody.velocity.y > 0f && !swimming)
+        if (jumpFlag && !jumping && rigidbody.velocity.y > 0f && !swimming && !holdingRope)
         {
             rigidbody.AddForce(Vector2.down * UNJUMP_FORCE);
         }
@@ -142,7 +162,7 @@ public class GuyPhysics : MonoBehaviour
         }
         else
         {
-            if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f)
+            if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f && !holdingRope)
                 rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, rigidbody.velocity.y), 0.3f);
             else
                 rigidbody.AddForce(-currGroundDir * MOVE_ACCEL_GROUND / 10f);
@@ -162,6 +182,17 @@ public class GuyPhysics : MonoBehaviour
         }
 
         jumping = true;
+    }
+
+    private bool GrabRope()
+    {
+        if (!ropeCollision) return false;
+
+        ropeHinge.connectedBody = ropeCollision.GetComponent<Rigidbody2D>();
+        ropeHinge.anchor = Vector2.zero;
+        ropeHinge.connectedAnchor = Vector2.zero;
+        ropeHinge.enabled = true;
+        return true;
     }
 
     public bool OnGround()

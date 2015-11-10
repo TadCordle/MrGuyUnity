@@ -11,7 +11,7 @@ public class CameraFollow : MonoBehaviour
     public float playerTrackingY;
     public float zoom;
 
-    private Transform transform;
+    new private Transform transform;
 
 	// Use this for initialization
 	void Start () 
