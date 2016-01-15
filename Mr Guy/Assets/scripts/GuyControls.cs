@@ -20,6 +20,9 @@ public class GuyControls : MonoBehaviour
         guy.Jumping = Input.GetKey(KeyCode.UpArrow) && !guy.IsHoldingRope || Input.GetKey(KeyCode.Z);
         guy.GrabbingRope = Input.GetKey(KeyCode.X);
 
+        guy.ClimbingUp = Input.GetKey(KeyCode.UpArrow);
+        guy.ClimbingDown = Input.GetKey(KeyCode.DownArrow);
+
         if (Input.GetKeyDown(KeyCode.Escape))
             Application.Quit();
 

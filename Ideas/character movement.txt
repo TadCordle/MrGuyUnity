@@ -7,7 +7,6 @@ Roll
 
 Grab
  - Ropes
-	To scale up and down, just lerp between (0, 0) on connected ropes links
  - Ledges
  - Objects
 

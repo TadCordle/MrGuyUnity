@@ -22,6 +22,8 @@ public class GuyPhysics : MonoBehaviour
     public const float MAX_SWIM_VSPEED = 9f;
     public const float MAX_SWIM_TIME = 0.2f;
 
+    public const float ROPE_CLIMBING_TIME = 0.1f;
+
     public bool HasWaterShoes { get; set; }
 
     public bool MovingLeft { get; set; }
@@ -29,6 +31,8 @@ public class GuyPhysics : MonoBehaviour
     public bool Jumping { get; set; }
     public bool GrabbingRope { get; set; }
     public bool IsHoldingRope { get { return holdingRope; } }
+    public bool ClimbingUp { get; set; }
+    public bool ClimbingDown { get; set; }
 
     private bool swimming;
     private float swimTime;
@@ -38,8 +42,6 @@ public class GuyPhysics : MonoBehaviour
 
     private CircleCollider2D collider_feet;
     private BoxCollider2D collider_torso;
-
-    private bool movingLeft, movingRight;
 
     private bool onGround;
     private bool rightTouchingGround, leftTouchingGround;
@@ -51,8 +53,10 @@ public class GuyPhysics : MonoBehaviour
 
     public GameObject ropeCollision;
     public HingeJoint2D ropeHinge;
+    private Rigidbody2D targetRope;
     private bool holdingRope;
     private float ignoreRopeTime;
+    private float climbTime;
     
 	void Awake () 
     {
@@ -70,8 +74,6 @@ public class GuyPhysics : MonoBehaviour
         
         onGround = OnGround();
 
-        movingLeft = false;
-        movingRight = false;
         jumping = false;
         jumpFlag = false;
         jumpForgiving = JUMP_FORGIVENESS;
@@ -104,20 +106,34 @@ public class GuyPhysics : MonoBehaviour
         else
             StopMoving();
 
-        if (GrabbingRope && ignoreRopeTime <= 0f)
+        if (ClimbingUp)
+            ClimbUpRope();
+        if (ClimbingDown)
+            ClimbDownRope();
+
+        if (climbTime > 0f)
         {
-            if (!holdingRope)
-            {
-                holdingRope = GrabRope();
-            }
+            ropeHinge.connectedAnchor = ropeHinge.anchor = Vector2.Lerp(rigidbody.position - targetRope.position, Vector2.zero, climbTime);
+            climbTime -= Time.deltaTime;
         }
         else
         {
-            ignoreRopeTime = 0f;
-            ropeHinge.enabled = false;
-            holdingRope = false;
+            if (GrabbingRope && ignoreRopeTime <= 0f)
+            {
+                if (!holdingRope)
+                {
+                    holdingRope = GrabRope();
+                }
+            }
+            else
+            {
+                ignoreRopeTime = 0f;
+                ropeHinge.enabled = false;
+                holdingRope = false;
+            }
         }
 
+        // TODO: Fix this
         if (ignoreRopeTime > 0f)
             ignoreRopeTime -= Time.deltaTime;
 
@@ -237,12 +253,32 @@ public class GuyPhysics : MonoBehaviour
 
     private void ClimbUpRope()
     {
-
+        if (ropeHinge.enabled && climbTime <= 0f)
+        {
+            Rigidbody2D up = ropeHinge.connectedBody.GetComponent<RopeLink>().up;
+            if (up != null)
+            {
+                climbTime = ROPE_CLIMBING_TIME;
+                targetRope = up;
+                ropeHinge.connectedBody = targetRope;
+                ropeHinge.connectedAnchor = ropeHinge.anchor = rigidbody.position - targetRope.position;
+            }
+        }
     }
 
     private void ClimbDownRope()
     {
-
+        if (ropeHinge.enabled && climbTime <= 0f)
+        {
+            Rigidbody2D down = ropeHinge.connectedBody.GetComponent<RopeLink>().down;
+            if (down != null)
+            {
+                climbTime = ROPE_CLIMBING_TIME;
+                targetRope = down;
+                ropeHinge.connectedBody = targetRope;
+                ropeHinge.connectedAnchor = ropeHinge.anchor = rigidbody.position - targetRope.position;
+            }
+        }
     }
 
     public bool OnGround()
