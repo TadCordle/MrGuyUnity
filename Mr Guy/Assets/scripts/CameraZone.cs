@@ -9,7 +9,7 @@ public class CameraZone : MonoBehaviour
     public float cameraZoom;
 
     private Transform player;
-    private CameraFollow camera;
+    new private CameraFollow camera;
 
 	// Use this for initialization
 	void Start () 

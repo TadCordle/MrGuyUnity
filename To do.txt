@@ -1,0 +1,9 @@
+- Rearrange controls
+- Improve ropes
+	- Make rope sprites smaller
+	- Generate ropes through scripts
+	- Add climbing up/down ropes
+- Add rolling movement mechanic
+- Add character sprite + animations
+- Moving platforms
+- Enemies

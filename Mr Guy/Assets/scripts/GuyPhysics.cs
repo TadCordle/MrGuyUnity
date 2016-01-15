@@ -7,16 +7,19 @@ public class GuyPhysics : MonoBehaviour
 {
     public const float MOVE_ACCEL_GROUND = 100f;
     public const float MAX_HSPEED_GROUND = 9f;
-
+    public const float MOVE_ACCEL_AIR = 80f;
     public const float MAX_HSPEED_AIR = 6f;
+    public const float MOVE_ACCEL_SWIMMING = 55f;
+    public const float MAX_HSPEED_SWIMMING = 7f;
+    public const float MOVE_ACCEL_SWING = 40f;
+    public const float MAX_SWING_SPEED = 15f;
+
     public const float JUMP_POWER = 17f;
     public const float UNJUMP_FORCE = 80f;
     public const float JUMP_FORGIVENESS = 0.08f;
 
-    public const float MAX_HSPEED_SWIMMING = 7f;
-    public const float MOVE_ACCEL_SWIMMING = 65f;
     public const float SWIM_POWER = 80f;
-    public const float MAX_SWIM_VSPEED = 10f;
+    public const float MAX_SWIM_VSPEED = 9f;
     public const float MAX_SWIM_TIME = 0.2f;
 
     public bool HasWaterShoes { get; set; }
@@ -25,12 +28,13 @@ public class GuyPhysics : MonoBehaviour
     public bool MovingRight { get; set; }
     public bool Jumping { get; set; }
     public bool GrabbingRope { get; set; }
+    public bool IsHoldingRope { get { return holdingRope; } }
 
     private bool swimming;
     private float swimTime;
 
-    private Rigidbody2D rigidbody;
-    private Transform transform;
+    new private Rigidbody2D rigidbody;
+    new private Transform transform;
 
     private CircleCollider2D collider_feet;
     private BoxCollider2D collider_torso;
@@ -40,13 +44,16 @@ public class GuyPhysics : MonoBehaviour
     private bool onGround;
     private bool rightTouchingGround, leftTouchingGround;
     private Vector2 currGroundDir;
+    private Vector2 currGroundVelocity;
 
     private bool jumping, jumpFlag;
     private float jumpForgiving;
 
     public GameObject ropeCollision;
     public HingeJoint2D ropeHinge;
+//  public RopeSegment rope;
     private bool holdingRope;
+    private float ignoreRopeTime;
     
 	void Awake () 
     {
@@ -77,7 +84,7 @@ public class GuyPhysics : MonoBehaviour
             jumpForgiving = Mathf.Max(0, jumpForgiving - Time.deltaTime);
 
         onGround = OnGround();
-        if (onGround)
+        if (onGround || holdingRope)
         {
             jumpForgiving = JUMP_FORGIVENESS;
             if (!jumping)
@@ -89,13 +96,16 @@ public class GuyPhysics : MonoBehaviour
         rigidbody.MoveRotation(Mathf.Lerp(closestRotation > 180 ? closestRotation - 360 : closestRotation, 0, 0.5f));
         rigidbody.gravityScale = 3f;
         if (MovingLeft)
-            MoveLeft();
+            if (MovingRight)
+                StopMoving();
+            else
+                MoveLeft();
         else if (MovingRight)
             MoveRight();
         else
             StopMoving();
 
-        if (GrabbingRope)
+        if (GrabbingRope && ignoreRopeTime <= 0f)
         {
             if (!holdingRope)
             {
@@ -104,10 +114,13 @@ public class GuyPhysics : MonoBehaviour
         }
         else
         {
-
+            ignoreRopeTime = 0f;
             ropeHinge.enabled = false;
             holdingRope = false;
         }
+
+        if (ignoreRopeTime > 0f)
+            ignoreRopeTime -= Time.deltaTime;
 
         if (onGround || swimming)
         {
@@ -123,7 +136,7 @@ public class GuyPhysics : MonoBehaviour
                 rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED);
         }
 
-        if (Jumping && !holdingRope)
+        if (Jumping)
             Jump();
         else
             jumping = false;
@@ -141,14 +154,34 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveLeft()
     {
-        if (rigidbody.velocity.x > -(onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR)))
-            rigidbody.AddForce(((leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left) * MOVE_ACCEL_GROUND);
+        if (!holdingRope)
+        {
+            float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
+            if (rigidbody.velocity.x > -maxSpeed)
+                rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+        }
+        else
+        {
+            if (rigidbody.velocity.y < 0 && rigidbody.velocity.x > -MAX_SWING_SPEED)
+                rigidbody.AddForce(Vector2.left * MOVE_ACCEL_SWING);
+        }
     }
 
     private void MoveRight()
     {
-        if (rigidbody.velocity.x < (onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR)))
-            rigidbody.AddForce(((rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right) * MOVE_ACCEL_GROUND);
+        if (!holdingRope)
+        {
+            float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
+            if (rigidbody.velocity.x < maxSpeed)
+                rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+        }
+        else
+        {
+            if (rigidbody.velocity.y < 0 && rigidbody.velocity.x < MAX_SWING_SPEED)
+                rigidbody.AddForce(Vector2.right * MOVE_ACCEL_SWING);
+        }
     }
 
     private void StopMoving()
@@ -181,6 +214,13 @@ public class GuyPhysics : MonoBehaviour
             rigidbody.AddForce(Vector2.up * SWIM_POWER);
         }
 
+        if (holdingRope)
+        {
+            ignoreRopeTime = 0.5f;
+            ropeHinge.enabled = false;
+            holdingRope = false;
+        }
+
         jumping = true;
     }
 
@@ -192,11 +232,24 @@ public class GuyPhysics : MonoBehaviour
         ropeHinge.anchor = Vector2.zero;
         ropeHinge.connectedAnchor = Vector2.zero;
         ropeHinge.enabled = true;
+        rigidbody.mass = 100f;
         return true;
+    }
+
+    private void ClimbUpRope()
+    {
+
+    }
+
+    private void ClimbDownRope()
+    {
+
     }
 
     public bool OnGround()
     {
+        if (rigidbody.mass != 1f)
+            rigidbody.mass = 1f;
         RaycastHit2D[] hitsLeft = Physics2D.RaycastAll((Vector2)collider_feet.transform.position + Vector2.left * 0.5f, Vector2.down, 0.9f);
         RaycastHit2D[] hitsMiddle = Physics2D.RaycastAll((Vector2)collider_feet.transform.position, Vector2.down, 1f);
         RaycastHit2D[] hitsRight = Physics2D.RaycastAll((Vector2)collider_feet.transform.position + Vector2.right * 0.5f, Vector2.down, 0.9f);
@@ -206,6 +259,7 @@ public class GuyPhysics : MonoBehaviour
         float normals = float.MaxValue;
         leftTouchingGround = rightTouchingGround = false;
         currGroundDir = Vector2.right;
+        currGroundVelocity = Vector2.zero;
         foreach (RaycastHit2D h in hits)
         {
             if (h.collider.gameObject.CompareTag("Ground")) // TODO: gonna need a way to unify tags of things we can stand on
@@ -220,6 +274,7 @@ public class GuyPhysics : MonoBehaviour
                 {
                     normals = Mathf.Abs(h.normal.x / h.normal.y);
                     currGroundDir = new Vector2(h.normal.normalized.y, -h.normal.normalized.x);
+                    currGroundVelocity = h.rigidbody != null ? h.rigidbody.velocity : Vector2.zero;
                 }
             }
         }
@@ -230,6 +285,8 @@ public class GuyPhysics : MonoBehaviour
     {
         if (collider.gameObject.CompareTag("Water"))
         {
+            if (rigidbody.mass != 1f)
+                rigidbody.mass = 1f;
             if (!swimming)
                 swimTime = MAX_SWIM_TIME;
             swimming = true;
