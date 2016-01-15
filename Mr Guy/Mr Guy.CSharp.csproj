@@ -68,11 +68,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\RopeCollision.cs" />
     <Compile Include="Assets\scripts\CameraFollow.cs" />
     <Compile Include="Assets\scripts\CameraZone.cs" />
     <Compile Include="Assets\scripts\GuyControls.cs" />
     <Compile Include="Assets\scripts\GuyPhysics.cs" />
+    <Compile Include="Assets\scripts\RopeCollision.cs" />
+    <Compile Include="Assets\scripts\RopeGenerator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>

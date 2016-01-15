@@ -51,7 +51,6 @@ public class GuyPhysics : MonoBehaviour
 
     public GameObject ropeCollision;
     public HingeJoint2D ropeHinge;
-//  public RopeSegment rope;
     private bool holdingRope;
     private float ignoreRopeTime;
     
