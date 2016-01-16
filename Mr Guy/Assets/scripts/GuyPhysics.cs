@@ -23,6 +23,7 @@ public class GuyPhysics : MonoBehaviour
     public const float MAX_SWIM_TIME = 0.2f;
 
     public const float ROPE_CLIMBING_TIME = 0.1f;
+    public const float MAX_IGNORE_ROPE_TIME = 0.3f;
 
     public bool HasWaterShoes { get; set; }
 
@@ -118,9 +119,9 @@ public class GuyPhysics : MonoBehaviour
         }
         else
         {
-            if (GrabbingRope && ignoreRopeTime <= 0f)
+            if (GrabbingRope)
             {
-                if (!holdingRope)
+                if (!holdingRope && ignoreRopeTime <= 0f)
                 {
                     holdingRope = GrabRope();
                 }
@@ -133,7 +134,6 @@ public class GuyPhysics : MonoBehaviour
             }
         }
 
-        // TODO: Fix this
         if (ignoreRopeTime > 0f)
             ignoreRopeTime -= Time.deltaTime;
 
@@ -178,7 +178,7 @@ public class GuyPhysics : MonoBehaviour
         }
         else
         {
-            if (rigidbody.velocity.y < 0 && rigidbody.velocity.x > -MAX_SWING_SPEED)
+            if (rigidbody.velocity.x > 0 || rigidbody.velocity.y < 0 && rigidbody.velocity.x > -MAX_SWING_SPEED)
                 rigidbody.AddForce(Vector2.left * MOVE_ACCEL_SWING);
         }
     }
@@ -194,7 +194,7 @@ public class GuyPhysics : MonoBehaviour
         }
         else
         {
-            if (rigidbody.velocity.y < 0 && rigidbody.velocity.x < MAX_SWING_SPEED)
+            if (rigidbody.velocity.x < 0 || rigidbody.velocity.y < 0 && rigidbody.velocity.x < MAX_SWING_SPEED)
                 rigidbody.AddForce(Vector2.right * MOVE_ACCEL_SWING);
         }
     }
@@ -229,9 +229,9 @@ public class GuyPhysics : MonoBehaviour
             rigidbody.AddForce(Vector2.up * SWIM_POWER);
         }
 
-        if (holdingRope)
+        if (holdingRope && !jumping)
         {
-            ignoreRopeTime = 0.5f;
+            ignoreRopeTime = MAX_IGNORE_ROPE_TIME;
             ropeHinge.enabled = false;
             holdingRope = false;
         }

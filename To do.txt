@@ -2,3 +2,5 @@
 - Add character sprite + animations
 - Moving platforms
 - Enemies
+
+- Figure out what the fuck this game is about
