@@ -13,6 +13,8 @@ public class GuyPhysics : MonoBehaviour
     public const float MAX_HSPEED_SWIMMING = 7f;
     public const float MOVE_ACCEL_SWING = 40f;
     public const float MAX_SWING_SPEED = 15f;
+    public const float MOVE_ACCEL_ROLL = 13f;
+    public const float MAX_ROLL_SPEED = 800f;
 
     public const float JUMP_POWER = 17f;
     public const float UNJUMP_FORCE = 80f;
@@ -30,6 +32,7 @@ public class GuyPhysics : MonoBehaviour
     public bool MovingLeft { get; set; }
     public bool MovingRight { get; set; }
     public bool Jumping { get; set; }
+    public bool Crouching { get; set; }
     public bool GrabbingRope { get; set; }
     public bool IsHoldingRope { get { return holdingRope; } }
     public bool ClimbingUp { get; set; }
@@ -41,7 +44,7 @@ public class GuyPhysics : MonoBehaviour
     new private Rigidbody2D rigidbody;
     new private Transform transform;
 
-    private CircleCollider2D collider_feet;
+    private CircleCollider2D collider_feet, collider_head;
     private BoxCollider2D collider_torso;
 
     private bool onGround;
@@ -51,6 +54,8 @@ public class GuyPhysics : MonoBehaviour
 
     private bool jumping, jumpFlag;
     private float jumpForgiving;
+
+    public bool crouched;
 
     public GameObject ropeCollision;
     public HingeJoint2D ropeHinge;
@@ -66,6 +71,7 @@ public class GuyPhysics : MonoBehaviour
         transform = GetComponent<Transform>();
         collider_feet = transform.GetChild(0).GetChild(0).GetComponent<CircleCollider2D>();
         collider_torso = transform.GetChild(0).GetChild(1).GetComponent<BoxCollider2D>();
+        collider_head = transform.GetChild(0).GetChild(2).GetComponent<CircleCollider2D>();
 	}
 
     void Start()
@@ -78,6 +84,8 @@ public class GuyPhysics : MonoBehaviour
         jumping = false;
         jumpFlag = false;
         jumpForgiving = JUMP_FORGIVENESS;
+
+        crouched = false;
     }
 	
     void Update()
@@ -92,11 +100,13 @@ public class GuyPhysics : MonoBehaviour
             if (!jumping)
                 jumpFlag = false;
         }
-        collider_feet.sharedMaterial.friction = onGround ? 0.1f : 0f;
+        collider_feet.sharedMaterial.friction = crouched ? 10f : (onGround ? 0.1f : 0f);
 
         float closestRotation = transform.localRotation.eulerAngles.z;
-        rigidbody.MoveRotation(Mathf.Lerp(closestRotation > 180 ? closestRotation - 360 : closestRotation, 0, 0.5f));
-        rigidbody.gravityScale = 3f;
+        closestRotation = closestRotation > 180 ? closestRotation - 360 : closestRotation;
+        if (!crouched)
+            rigidbody.MoveRotation(Mathf.Lerp(closestRotation, 0, 0.5f));
+        rigidbody.gravityScale = 1f;
         if (MovingLeft)
             if (MovingRight)
                 StopMoving();
@@ -106,6 +116,13 @@ public class GuyPhysics : MonoBehaviour
             MoveRight();
         else
             StopMoving();
+
+        SetCrouch(Crouching);
+        
+        collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 90f;
+        // DEBUG
+        transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
+
 
         if (ClimbingUp)
             ClimbUpRope();
@@ -140,15 +157,15 @@ public class GuyPhysics : MonoBehaviour
         if (onGround || swimming)
         {
             if (rigidbody.velocity.x < -MAX_HSPEED_GROUND)
-                rigidbody.AddForce(Vector2.right * (swimming ? MOVE_ACCEL_SWIMMING : MOVE_ACCEL_GROUND) / 3f);
+                rigidbody.AddForce(Vector2.right * (swimming ? MOVE_ACCEL_SWIMMING : (crouched ? MOVE_ACCEL_GROUND / 5f : MOVE_ACCEL_GROUND)) / 3f);
             else if (rigidbody.velocity.x > MAX_HSPEED_GROUND)
-                rigidbody.AddForce(Vector2.left * (swimming ? MOVE_ACCEL_SWIMMING : MOVE_ACCEL_GROUND) / 3f);
+                rigidbody.AddForce(Vector2.left * (swimming ? MOVE_ACCEL_SWIMMING : (crouched ? MOVE_ACCEL_GROUND / 5f : MOVE_ACCEL_GROUND)) / 3f);
         }
 
         if (!onGround && swimming)
         {   
-            if (rigidbody.velocity.y < -MAX_SWIM_VSPEED)
-                rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED);
+            if (rigidbody.velocity.y < -MAX_SWIM_VSPEED * (crouched ? 2.5f : 1f))
+                rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED * (crouched ? 2.5f : 1f));
         }
 
         if (Jumping)
@@ -172,9 +189,21 @@ public class GuyPhysics : MonoBehaviour
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
-            Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
-            if (rigidbody.velocity.x > -maxSpeed)
-                rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+            if (crouched)
+            {
+                if (rigidbody.angularVelocity < MAX_ROLL_SPEED && rigidbody.velocity.x > -maxSpeed)
+                {
+                    rigidbody.AddTorque(MOVE_ACCEL_ROLL);
+                    if (!onGround)
+                        rigidbody.AddForce(Vector2.left * MOVE_ACCEL_AIR);
+                }
+            }
+            else
+            {
+                Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
+                if (rigidbody.velocity.x > -maxSpeed)
+                    rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+            }
         }
         else
         {
@@ -188,9 +217,21 @@ public class GuyPhysics : MonoBehaviour
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
-            Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
-            if (rigidbody.velocity.x < maxSpeed)
-                rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+            if (crouched)
+            {
+                if (rigidbody.angularVelocity > -MAX_ROLL_SPEED && rigidbody.velocity.x < maxSpeed)
+                {
+                    rigidbody.AddTorque(-MOVE_ACCEL_ROLL);
+                    if (!onGround)
+                        rigidbody.AddForce(Vector2.right * MOVE_ACCEL_AIR);
+                }
+            }
+            else
+            {
+                Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
+                if (rigidbody.velocity.x < maxSpeed)
+                    rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
+            }
         }
         else
         {
@@ -201,9 +242,12 @@ public class GuyPhysics : MonoBehaviour
 
     private void StopMoving()
     {
+        if (crouched)
+            return;
+
         if (onGround)
         {
-            if (!jumping)
+            if (!jumping && !crouched)
                 rigidbody.gravityScale = 0f;
             if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f)
                 rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, jumping ? rigidbody.velocity.y : 0), 0.5f);
@@ -224,7 +268,7 @@ public class GuyPhysics : MonoBehaviour
             jumpFlag = true;
             rigidbody.velocity = new Vector2(rigidbody.velocity.x /* * 3f*/, JUMP_POWER); // TODO: incorporate speed of platform
         }
-        else if (swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0) && rigidbody.velocity.y < MAX_SWIM_VSPEED)
+        else if (swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0) && rigidbody.velocity.y < MAX_SWIM_VSPEED && !crouched)
         {
             rigidbody.AddForce(Vector2.up * SWIM_POWER);
         }
@@ -241,7 +285,7 @@ public class GuyPhysics : MonoBehaviour
 
     private bool GrabRope()
     {
-        if (!ropeCollision) return false;
+        if (!ropeCollision || crouched) return false;
 
         ropeHinge.connectedBody = ropeCollision.GetComponent<Rigidbody2D>();
         ropeHinge.anchor = Vector2.zero;
@@ -314,6 +358,49 @@ public class GuyPhysics : MonoBehaviour
             }
         }
         return groundCount > 0 && normals < 1.6f;
+    }
+
+    public void SetCrouch(bool crouch)
+    {
+        if (Crouching)
+        {
+            if (!crouched)
+            {
+                rigidbody.gravityScale = 1f;
+                crouched = !holdingRope;
+            }
+        }
+        else if (crouched)
+        {
+            crouched &= !CanStandUp();
+            if (!crouched)
+            {
+                rigidbody.angularVelocity = 0f;
+                if (onGround)
+                    rigidbody.gravityScale = 0f;
+            }
+        }
+    }
+
+    public bool CanStandUp()
+    {
+        RaycastHit2D[] hitsLeft = Physics2D.RaycastAll((Vector2)collider_feet.transform.position + Vector2.left * 0.5f, Vector2.up, 1.4f);
+        RaycastHit2D[] hitsMiddle = Physics2D.RaycastAll((Vector2)collider_feet.transform.position, Vector2.up, 1.5f);
+        RaycastHit2D[] hitsRight = Physics2D.RaycastAll((Vector2)collider_feet.transform.position + Vector2.right * 0.5f, Vector2.up, 1.4f);
+        RaycastHit2D[] hits = hitsMiddle.Union(hitsLeft).Union(hitsRight).ToArray<RaycastHit2D>();
+
+        int ceilCount = 0;
+        bool middleHit = false;
+        foreach (RaycastHit2D h in hits)
+        {
+            if (h.collider.gameObject.CompareTag("Ground")) // TODO: gonna need a way to unify tags of things we can stand on
+            {
+                ceilCount++;
+                if (hitsMiddle.Contains(h))
+                    middleHit = true;
+            }
+        }
+        return ceilCount <= 1 && !middleHit;
     }
 
     void OnTriggerStay2D(Collider2D collider)

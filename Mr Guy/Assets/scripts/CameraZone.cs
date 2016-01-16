@@ -3,19 +3,19 @@ using System.Collections;
 
 public class CameraZone : MonoBehaviour 
 {
-    public Transform focalPoint;
+    public GameObject focalPoint;
     public float playerTrackingX;
     public float playerTrackingY;
     public float cameraZoom;
 
-    private Transform player;
+    private GameObject player;
     new private CameraFollow camera;
 
 	// Use this for initialization
 	void Start () 
     {
         camera = FindObjectOfType<CameraFollow>();
-        player = GameObject.FindGameObjectWithTag("Player").GetComponent<Transform>();
+        player = GameObject.Find("Player");
 	}
 
     void OnTriggerStay2D(Collider2D collider)
