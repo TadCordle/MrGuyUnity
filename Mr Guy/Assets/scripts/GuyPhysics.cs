@@ -100,7 +100,8 @@ public class GuyPhysics : MonoBehaviour
             if (!jumping)
                 jumpFlag = false;
         }
-        collider_feet.sharedMaterial.friction = crouched ? 10f : (onGround ? 0.1f : 0f);
+        collider_feet.sharedMaterial.friction = onGround ? 0.1f : 0f;
+        if (crouched) collider_feet.sharedMaterial.friction *= 10000f;
 
         float closestRotation = transform.localRotation.eulerAngles.z;
         closestRotation = closestRotation > 180 ? closestRotation - 360 : closestRotation;
@@ -120,7 +121,7 @@ public class GuyPhysics : MonoBehaviour
         SetCrouch(Crouching);
         
         collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 90f;
-        // DEBUG
+        // TODO: DEBUG - remove when you have actual character sprite
         transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
 
 
@@ -189,18 +190,16 @@ public class GuyPhysics : MonoBehaviour
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
             if (crouched)
             {
-                if (rigidbody.angularVelocity < MAX_ROLL_SPEED && rigidbody.velocity.x > -maxSpeed)
-                {
+                if (rigidbody.angularVelocity < MAX_ROLL_SPEED)
                     rigidbody.AddTorque(MOVE_ACCEL_ROLL);
-                    if (!onGround)
-                        rigidbody.AddForce(Vector2.left * MOVE_ACCEL_AIR);
-                }
+                if (!onGround && rigidbody.velocity.x > -maxSpeed)
+                    rigidbody.AddForce(actualDirection * MOVE_ACCEL_AIR);
             }
             else
             {
-                Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
                 if (rigidbody.velocity.x > -maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -217,18 +216,16 @@ public class GuyPhysics : MonoBehaviour
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
             if (crouched)
             {
-                if (rigidbody.angularVelocity > -MAX_ROLL_SPEED && rigidbody.velocity.x < maxSpeed)
-                {
+                if (rigidbody.angularVelocity > -MAX_ROLL_SPEED)
                     rigidbody.AddTorque(-MOVE_ACCEL_ROLL);
-                    if (!onGround)
-                        rigidbody.AddForce(Vector2.right * MOVE_ACCEL_AIR);
-                }
+                if (!onGround && rigidbody.velocity.x < maxSpeed)
+                    rigidbody.AddForce(actualDirection * MOVE_ACCEL_AIR);
             }
             else
             {
-                Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
                 if (rigidbody.velocity.x < maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
