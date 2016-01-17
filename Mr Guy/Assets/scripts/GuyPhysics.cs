@@ -120,11 +120,10 @@ public class GuyPhysics : MonoBehaviour
 
         SetCrouch(Crouching);
         
-        collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 90f;
+        collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 40f;
         // TODO: DEBUG - remove when you have actual character sprite
         transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
-
-
+        
         if (ClimbingUp)
             ClimbUpRope();
         if (ClimbingDown)
