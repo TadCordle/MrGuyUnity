@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class GuyControls : MonoBehaviour 
 {
@@ -29,6 +30,6 @@ public class GuyControls : MonoBehaviour
 
         // DEBUG
         if (Input.GetKeyDown(KeyCode.R))
-            Application.LoadLevel(Application.loadedLevel);
+            SceneManager.LoadScene(SceneManager.GetSceneAt(0).name);
     }
 }

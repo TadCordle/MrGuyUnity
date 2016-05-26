@@ -1,32 +1,32 @@
-	- Areas
-		- Forest
-			- Tutorial, linear
-			- Return on different path and do different stuff
-		- Guy village (hub)
-		- Skyland (name=wat, above forest)
-			- Airplane mission?
-			- Search for thing hiding in clouds
-			- Cloud maze (no collision on some clouds)
-		- Volcano
-			- Roll down side
-			- Lava monster boss fight
-		- Temple
-			- Puzzles everywhere
-			- Gauntlet of doom
-			- Aladdin rip-off (escape with treasure)?
-		- Prison
-			- Help asshole escape
-		- Dream world
-			- Riddle
-			- Impossible spaces
-			- Walking on walls
-			- Trippy boss fight
-		- Dock/Island
-			- Collect hamsters
-		- Underground
-			- Mole monsters
-			- Water filling, escape before drowning?
-			- Underwater gauntlet
-		- Mt. Pretty Alright
-	- Speedrun routes in each world
-		- Use arrows to direct player where they need to go to reach the finish
+- Areas
+	- Forest
+		- Tutorial, linear
+		- Return on different path and do different stuff
+	- Guy village (hub)
+	- Skyland (name=wat, above forest)
+		- Airplane mission?
+		- Search for thing hiding in clouds
+		- Cloud maze (no collision on some clouds)
+	- Volcano
+		- Roll down side
+		- Lava monster boss fight
+	- Temple
+		- Puzzles everywhere
+		- Gauntlet of doom
+		- Aladdin rip-off (escape with treasure)?
+	- Prison
+		- Help asshole escape
+	- Dream world
+		- Riddle
+		- Impossible spaces
+		- Walking on walls
+		- Trippy boss fight
+	- Factory
+		- Something with controlling machinery
+	- Underground
+		- Mole monsters
+		- Water filling, escape before drowning?
+		- Underwater gauntlet
+	- Mt. Pretty Alright
+- Speedrun routes in each world
+	- Use arrows to direct player where they need to go to reach the finish

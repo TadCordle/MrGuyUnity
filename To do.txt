@@ -1,4 +1,5 @@
 - Add character sprite + animations
+- NPC's + dialog
 - Moving platforms
 - Enemies
 
