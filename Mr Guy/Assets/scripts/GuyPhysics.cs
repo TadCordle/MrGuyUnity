@@ -63,12 +63,14 @@ public class GuyPhysics : MonoBehaviour
     private bool holdingRope;
     private float ignoreRopeTime;
     private float climbTime;
+    private GuyAnimation guyAnimation;
     
 	void Awake () 
     {
         ropeCollision = null;
         rigidbody = GetComponent<Rigidbody2D>();
         transform = GetComponent<Transform>();
+        guyAnimation = GetComponentInChildren<GuyAnimation>();
         collider_feet = transform.GetChild(0).GetChild(0).GetComponent<CircleCollider2D>();
         collider_torso = transform.GetChild(0).GetChild(1).GetComponent<BoxCollider2D>();
         collider_head = transform.GetChild(0).GetChild(2).GetComponent<CircleCollider2D>();
@@ -90,24 +92,31 @@ public class GuyPhysics : MonoBehaviour
 	
     void Update()
     {
+        // Tick coyote timer
         if (!onGround)
             jumpForgiving = Mathf.Max(0, jumpForgiving - Time.deltaTime);
 
         onGround = OnGround();
         if (onGround || holdingRope)
         {
+            // You can jump again
             jumpForgiving = JUMP_FORGIVENESS;
             if (!jumping)
                 jumpFlag = false;
         }
+
+        // Make sure you can't stand/roll up walls
         collider_feet.sharedMaterial.friction = onGround ? 0.1f : 0f;
         if (crouched) collider_feet.sharedMaterial.friction *= 10000f;
 
+        // Stand straight up
         float closestRotation = transform.localRotation.eulerAngles.z;
         closestRotation = closestRotation > 180 ? closestRotation - 360 : closestRotation;
         if (!crouched)
             rigidbody.MoveRotation(Mathf.Lerp(closestRotation, 0, 0.5f));
         rigidbody.gravityScale = 1f;
+
+        // Handle horizontal movement
         if (MovingLeft)
             if (MovingRight)
                 StopMoving();
@@ -120,9 +129,11 @@ public class GuyPhysics : MonoBehaviour
 
         SetCrouch(Crouching);
         
+        // Disable upper colliders while crouching
         collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 40f;
-        // TODO: DEBUG - remove when you have actual character sprite
-        transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
+
+        // DEBUG rolling sprite
+        //transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
         
         if (ClimbingUp)
             ClimbUpRope();
@@ -131,11 +142,13 @@ public class GuyPhysics : MonoBehaviour
 
         if (climbTime > 0f)
         {
+            // Climb to next rope segment
             ropeHinge.connectedAnchor = ropeHinge.anchor = Vector2.Lerp(rigidbody.position - targetRope.position, Vector2.zero, climbTime);
             climbTime -= Time.deltaTime;
         }
         else
         {
+            // Attach to rope if grabbing
             if (GrabbingRope)
             {
                 if (!holdingRope && ignoreRopeTime <= 0f)
@@ -154,6 +167,7 @@ public class GuyPhysics : MonoBehaviour
         if (ignoreRopeTime > 0f)
             ignoreRopeTime -= Time.deltaTime;
 
+        // Decelerate to speed cap if not midair
         if (onGround || swimming)
         {
             if (rigidbody.velocity.x < -MAX_HSPEED_GROUND)
@@ -162,6 +176,7 @@ public class GuyPhysics : MonoBehaviour
                 rigidbody.AddForce(Vector2.left * (swimming ? MOVE_ACCEL_SWIMMING : (crouched ? MOVE_ACCEL_GROUND / 5f : MOVE_ACCEL_GROUND)) / 3f);
         }
 
+        // Cap falling speed in water
         if (!onGround && swimming)
         {   
             if (rigidbody.velocity.y < -MAX_SWIM_VSPEED * (crouched ? 2.5f : 1f))
@@ -173,6 +188,7 @@ public class GuyPhysics : MonoBehaviour
         else
             jumping = false;
 
+        // Variable jump height
         if (jumpFlag && !jumping && rigidbody.velocity.y > 0f && !swimming && !holdingRope)
         {
             rigidbody.AddForce(Vector2.down * UNJUMP_FORCE);
@@ -186,6 +202,7 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveLeft()
     {
+        guyAnimation.SetFacingLeft(true);
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
@@ -212,6 +229,7 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveRight()
     {
+        guyAnimation.SetFacingLeft(false);
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
@@ -358,6 +376,7 @@ public class GuyPhysics : MonoBehaviour
 
     public void SetCrouch(bool crouch)
     {
+        guyAnimation.SetCrouch(crouch);
         if (Crouching)
         {
             if (!crouched)

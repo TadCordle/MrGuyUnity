@@ -7,7 +7,7 @@ public class GuyControls : MonoBehaviour
     private GuyPhysics guy;
 
 	// Use this for initialization
-	void Start () 
+	void Awake () 
     {
         guy = GetComponent<GuyPhysics>();
 	}
