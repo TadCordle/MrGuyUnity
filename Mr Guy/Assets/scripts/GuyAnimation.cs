@@ -23,7 +23,7 @@ public class GuyAnimation : MonoBehaviour
 	void Awake ()
     {
         transform = GetComponent<Transform>();
-        anim = GetComponent<Animator>();
+        anim = GetComponentInChildren<Animator>();
         joints = new List<Joint2D>();
         rigidbodies = new List<Rigidbody2D>();
 
@@ -62,7 +62,8 @@ public class GuyAnimation : MonoBehaviour
     public void SetPhysicsEnabled(bool enabled)
     {
         jnt_body.enabled = enabled;
-        anim.Stop();
+        if (enabled)
+            anim.Stop();
         foreach (Rigidbody2D rb in rigidbodies)
             rb.isKinematic = !enabled;
     }
@@ -72,12 +73,12 @@ public class GuyAnimation : MonoBehaviour
         if (FacingLeft && !newFacingLeft)
         {
             FacingLeft = false;
-            transform.parent.localScale = new Vector2(-transform.parent.localScale.x, transform.parent.localScale.y);
+            transform.localScale = new Vector2(-transform.localScale.x, transform.localScale.y);
         }
         else if (!FacingLeft && newFacingLeft)
         {
             FacingLeft = true;
-            transform.parent.localScale = new Vector2(-transform.parent.localScale.x, transform.parent.localScale.y);
+            transform.localScale = new Vector2(-transform.localScale.x, transform.localScale.y);
         }
     }
 

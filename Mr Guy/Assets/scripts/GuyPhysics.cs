@@ -78,6 +78,9 @@ public class GuyPhysics : MonoBehaviour
 
     void Start()
     {
+        if (guyAnimation)
+            guyAnimation.SetPhysicsEnabled(false);
+
         rigidbody.drag = 0;
         swimTime = MAX_SWIM_TIME;
         
@@ -161,6 +164,7 @@ public class GuyPhysics : MonoBehaviour
                 ignoreRopeTime = 0f;
                 ropeHinge.enabled = false;
                 holdingRope = false;
+                rigidbody.mass = 1f;
             }
         }
 
@@ -202,10 +206,10 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveLeft()
     {
-        if (guyAnimation)
-            guyAnimation.SetFacingLeft(true);
         if (!holdingRope)
         {
+            if (guyAnimation)
+                guyAnimation.SetFacingLeft(true);
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
             Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
             if (crouched)
@@ -233,10 +237,10 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveRight()
     {
-        if (guyAnimation)
-            guyAnimation.SetFacingLeft(false);
         if (!holdingRope)
         {
+            if (guyAnimation)
+                guyAnimation.SetFacingLeft(false);
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
             Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
             if (crouched)
