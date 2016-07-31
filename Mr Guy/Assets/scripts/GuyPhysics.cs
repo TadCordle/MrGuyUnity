@@ -202,7 +202,8 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveLeft()
     {
-        guyAnimation.SetFacingLeft(true);
+        if (guyAnimation)
+            guyAnimation.SetFacingLeft(true);
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
@@ -217,7 +218,8 @@ public class GuyPhysics : MonoBehaviour
             else
             {
                 if (onGround)
-                    guyAnimation.SetRunning(true);
+                    if (guyAnimation)
+                        guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x > -maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -231,7 +233,8 @@ public class GuyPhysics : MonoBehaviour
 
     private void MoveRight()
     {
-        guyAnimation.SetFacingLeft(false);
+        if (guyAnimation)
+            guyAnimation.SetFacingLeft(false);
         if (!holdingRope)
         {
             float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
@@ -246,7 +249,8 @@ public class GuyPhysics : MonoBehaviour
             else
             {
                 if (onGround)
-                    guyAnimation.SetRunning(true);
+                    if (guyAnimation)
+                        guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x < maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -263,7 +267,8 @@ public class GuyPhysics : MonoBehaviour
         if (crouched)
             return;
 
-        guyAnimation.SetRunning(false);
+        if (guyAnimation)
+            guyAnimation.SetRunning(false);
         if (onGround)
         {
             if (!jumping && !crouched)
@@ -399,7 +404,8 @@ public class GuyPhysics : MonoBehaviour
                     rigidbody.gravityScale = 0f;
             }
         }
-        guyAnimation.SetCrouch(crouched);
+        if (guyAnimation)
+            guyAnimation.SetCrouch(crouched);
     }
 
     public bool CanStandUp()
