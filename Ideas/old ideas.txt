@@ -21,6 +21,7 @@
 		- Impossible spaces
 		- Walking on walls
 		- Trippy boss fight
+		- Or just big Synesthesia section (LBP level)
 	- Factory
 		- Something with controlling machinery
 	- Underground
