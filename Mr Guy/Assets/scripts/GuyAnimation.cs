@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class GuyAnimation : MonoBehaviour
 {
     public bool FacingLeft = false;
+    private bool crouching;
     public GameObject body, head, armLeftTop, armLeftBottom, handLeft, armRightTop, armRightBottom, handRight,
                       legLeftTop, legLeftBottom, footLeft, legRightTop, legRightBottom, footRight;
 
@@ -84,11 +85,23 @@ public class GuyAnimation : MonoBehaviour
 
     public void SetCrouch(bool crouch)
     {
+        crouching = crouch;
+        if (crouch)
+            anim.speed = 1;
         anim.SetBool("Crouched", crouch);
     }
 
     public void SetRunning(bool running)
     {
         anim.SetBool("Running", running);
+    }
+
+    public void SetMidair(bool midair, float amount)
+    {
+        anim.SetBool("Midair", midair);
+        if (midair && !crouching)
+            anim.Play("guy_jump", 0, 1 - amount);
+        else
+            anim.speed = 1;
     }
 }
