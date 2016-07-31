@@ -85,4 +85,9 @@ public class GuyAnimation : MonoBehaviour
     {
         anim.SetBool("Crouched", crouch);
     }
+
+    public void SetRunning(bool running)
+    {
+        anim.SetBool("Running", running);
+    }
 }

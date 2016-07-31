@@ -216,6 +216,8 @@ public class GuyPhysics : MonoBehaviour
             }
             else
             {
+                if (onGround)
+                    guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x > -maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -243,6 +245,8 @@ public class GuyPhysics : MonoBehaviour
             }
             else
             {
+                if (onGround)
+                    guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x < maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -259,6 +263,7 @@ public class GuyPhysics : MonoBehaviour
         if (crouched)
             return;
 
+        guyAnimation.SetRunning(false);
         if (onGround)
         {
             if (!jumping && !crouched)
@@ -376,8 +381,7 @@ public class GuyPhysics : MonoBehaviour
 
     public void SetCrouch(bool crouch)
     {
-        guyAnimation.SetCrouch(crouch);
-        if (Crouching)
+        if (crouch)
         {
             if (!crouched)
             {
@@ -395,6 +399,7 @@ public class GuyPhysics : MonoBehaviour
                     rigidbody.gravityScale = 0f;
             }
         }
+        guyAnimation.SetCrouch(crouched);
     }
 
     public bool CanStandUp()
