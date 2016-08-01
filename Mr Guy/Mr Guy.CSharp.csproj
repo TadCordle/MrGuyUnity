@@ -67,6 +67,7 @@
     <Compile Include="Assets\scripts\CameraZone.cs" />
     <Compile Include="Assets\scripts\GuyAnimation.cs" />
     <Compile Include="Assets\scripts\GuyControls.cs" />
+    <Compile Include="Assets\scripts\GuyNPC.cs" />
     <Compile Include="Assets\scripts\GuyPhysics.cs" />
     <Compile Include="Assets\scripts\RopeCollision.cs" />
     <Compile Include="Assets\scripts\RopeGenerator.cs" />

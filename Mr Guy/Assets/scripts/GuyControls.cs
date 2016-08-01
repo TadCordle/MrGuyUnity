@@ -31,5 +31,8 @@ public class GuyControls : MonoBehaviour
         // DEBUG
         if (Input.GetKeyDown(KeyCode.R))
             SceneManager.LoadScene(SceneManager.GetSceneAt(0).name);
+
+        if (Input.GetKeyDown(KeyCode.K))
+            GetComponentInChildren<GuyAnimation>().SetPhysicsEnabled(true);
     }
 }

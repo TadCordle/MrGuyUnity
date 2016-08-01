@@ -66,7 +66,11 @@ public class GuyAnimation : MonoBehaviour
         if (enabled)
             anim.Stop();
         foreach (Rigidbody2D rb in rigidbodies)
+        {
             rb.isKinematic = !enabled;
+            if (enabled)
+                rb.WakeUp();
+        }
     }
 
     public void SetFacingLeft(bool newFacingLeft)
@@ -103,5 +107,20 @@ public class GuyAnimation : MonoBehaviour
             anim.Play("guy_jump", 0, 1 - amount);
         else
             anim.speed = 1;
+    }
+
+    public void SetHoldingRope(bool holdingRope)
+    {
+        anim.SetBool("HoldingRope", holdingRope);
+    }
+
+    public void SetClimbDir(int dir)
+    {
+        anim.SetBool("ClimbingUp", false);
+        anim.SetBool("ClimbingDown", false);
+        if (dir == -1)
+            anim.SetBool("ClimbingDown", true);
+        else if (dir == 1)
+            anim.SetBool("ClimbingUp", true);
     }
 }

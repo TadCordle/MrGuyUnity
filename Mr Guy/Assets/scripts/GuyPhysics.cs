@@ -26,6 +26,7 @@ public class GuyPhysics : MonoBehaviour
 
     public const float ROPE_CLIMBING_TIME = 0.1f;
     public const float MAX_IGNORE_ROPE_TIME = 0.3f;
+    public static Vector2 ROPE_GRAB_OFFSET = Vector2.up * 1.2f;
 
     public bool HasWaterShoes { get; set; }
 
@@ -120,6 +121,10 @@ public class GuyPhysics : MonoBehaviour
         collider_feet.sharedMaterial.friction = onGround ? 0.1f : 0f;
         if (crouched) collider_feet.sharedMaterial.friction *= 10000f;
 
+        // Workaround to update friction because unity is bad
+        collider_feet.enabled = false;
+        collider_feet.enabled = true;
+
         // Stand straight up
         float closestRotation = transform.localRotation.eulerAngles.z;
         closestRotation = closestRotation > 180 ? closestRotation - 360 : closestRotation;
@@ -142,19 +147,19 @@ public class GuyPhysics : MonoBehaviour
         
         // Disable upper colliders while crouching
         collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 40f;
-
-        // DEBUG rolling sprite
-        //transform.GetChild(0).GetChild(1).GetComponent<SpriteRenderer>().enabled = transform.GetChild(0).GetChild(2).GetComponent<SpriteRenderer>().enabled = !crouched && Mathf.Abs(closestRotation) <= 90f;
         
         if (ClimbingUp)
             ClimbUpRope();
         if (ClimbingDown)
             ClimbDownRope();
+        if (!ClimbingUp && !ClimbingDown && guyAnimation)
+            guyAnimation.SetClimbDir(0);
 
         if (climbTime > 0f)
         {
             // Climb to next rope segment
-            ropeHinge.connectedAnchor = ropeHinge.anchor = Vector2.Lerp(rigidbody.position - targetRope.position, Vector2.zero, climbTime);
+            ropeHinge.anchor = Vector2.Lerp(rigidbody.position - targetRope.position + ROPE_GRAB_OFFSET, Vector2.zero, climbTime);
+            ropeHinge.connectedAnchor = Vector2.Lerp(rigidbody.position - targetRope.position, Vector2.zero, climbTime);
             climbTime -= Time.deltaTime;
         }
         else
@@ -165,15 +170,12 @@ public class GuyPhysics : MonoBehaviour
                 if (!holdingRope && ignoreRopeTime <= 0f)
                 {
                     holdingRope = GrabRope();
+                    if (!holdingRope)
+                        UngrabRope();
                 }
             }
             else
-            {
-                ignoreRopeTime = 0f;
-                ropeHinge.enabled = false;
-                holdingRope = false;
-                rigidbody.mass = 1f;
-            }
+                UngrabRope();
         }
 
         if (ignoreRopeTime > 0f)
@@ -229,9 +231,8 @@ public class GuyPhysics : MonoBehaviour
             }
             else
             {
-                if (onGround)
-                    if (guyAnimation)
-                        guyAnimation.SetRunning(true);
+                if (onGround && guyAnimation)
+                    guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x > -maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -260,9 +261,8 @@ public class GuyPhysics : MonoBehaviour
             }
             else
             {
-                if (onGround)
-                    if (guyAnimation)
-                        guyAnimation.SetRunning(true);
+                if (onGround && guyAnimation)
+                    guyAnimation.SetRunning(true);
                 if (rigidbody.velocity.x < maxSpeed)
                     rigidbody.AddForce(actualDirection * (onGround ? MOVE_ACCEL_GROUND : MOVE_ACCEL_AIR));
             }
@@ -311,9 +311,8 @@ public class GuyPhysics : MonoBehaviour
 
         if (holdingRope && !jumping)
         {
+            UngrabRope();
             ignoreRopeTime = MAX_IGNORE_ROPE_TIME;
-            ropeHinge.enabled = false;
-            holdingRope = false;
         }
 
         jumping = true;
@@ -321,14 +320,27 @@ public class GuyPhysics : MonoBehaviour
 
     private bool GrabRope()
     {
-        if (!ropeCollision || crouched) return false;
+        if (!ropeCollision || crouched || ignoreRopeTime > 0f) return false;
+
+        if (guyAnimation)
+            guyAnimation.SetHoldingRope(true);
 
         ropeHinge.connectedBody = ropeCollision.GetComponent<Rigidbody2D>();
-        ropeHinge.anchor = Vector2.zero;
+        ropeHinge.anchor = ROPE_GRAB_OFFSET;
         ropeHinge.connectedAnchor = Vector2.zero;
         ropeHinge.enabled = true;
         rigidbody.mass = 100f;
         return true;
+    }
+
+    private void UngrabRope()
+    {
+        if (guyAnimation)
+            guyAnimation.SetHoldingRope(false);
+        ignoreRopeTime = 0f;
+        ropeHinge.enabled = false;
+        holdingRope = false;
+        rigidbody.mass = 1f;
     }
 
     private void ClimbUpRope()
@@ -338,10 +350,13 @@ public class GuyPhysics : MonoBehaviour
             Rigidbody2D up = ropeHinge.connectedBody.GetComponent<RopeLink>().up;
             if (up != null)
             {
+                if (guyAnimation)
+                    guyAnimation.SetClimbDir(1);
                 climbTime = ROPE_CLIMBING_TIME;
                 targetRope = up;
                 ropeHinge.connectedBody = targetRope;
-                ropeHinge.connectedAnchor = ropeHinge.anchor = rigidbody.position - targetRope.position;
+                ropeHinge.anchor = rigidbody.position - targetRope.position + ROPE_GRAB_OFFSET;
+                ropeHinge.connectedAnchor = rigidbody.position - targetRope.position;
             }
         }
     }
@@ -353,10 +368,13 @@ public class GuyPhysics : MonoBehaviour
             Rigidbody2D down = ropeHinge.connectedBody.GetComponent<RopeLink>().down;
             if (down != null)
             {
+                if (guyAnimation)
+                    guyAnimation.SetClimbDir(-1);
                 climbTime = ROPE_CLIMBING_TIME;
                 targetRope = down;
                 ropeHinge.connectedBody = targetRope;
-                ropeHinge.connectedAnchor = ropeHinge.anchor = rigidbody.position - targetRope.position;
+                ropeHinge.anchor = rigidbody.position - targetRope.position + ROPE_GRAB_OFFSET;
+                ropeHinge.connectedAnchor = rigidbody.position - targetRope.position;
             }
         }
     }
