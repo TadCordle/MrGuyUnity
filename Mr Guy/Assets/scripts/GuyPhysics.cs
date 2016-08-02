@@ -198,9 +198,15 @@ public class GuyPhysics : MonoBehaviour
         }
 
         if (Jumping)
+        {
             Jump();
+        }
         else
+        {
             jumping = false;
+            if (guyAnimation)
+                guyAnimation.SetSwimming(false);
+        }
 
         // Variable jump height
         if (jumpFlag && !jumping && rigidbody.velocity.y > 0f && !swimming && !holdingRope)
@@ -306,7 +312,14 @@ public class GuyPhysics : MonoBehaviour
         }
         else if (swimming && (swimTime <= 0 && rigidbody.velocity.y <= 0 || rigidbody.velocity.y > 0) && rigidbody.velocity.y < MAX_SWIM_VSPEED && !crouched)
         {
+            if (swimming && guyAnimation)
+                guyAnimation.SetSwimming(true);
             rigidbody.AddForce(Vector2.up * SWIM_POWER);
+        }
+        else if (!swimming)
+        {
+            if (guyAnimation)
+                guyAnimation.SetSwimming(false);
         }
 
         if (holdingRope && !jumping)
@@ -435,7 +448,9 @@ public class GuyPhysics : MonoBehaviour
             }
         }
         if (guyAnimation)
+        {
             guyAnimation.SetCrouch(crouched);
+        }
     }
 
     public bool CanStandUp()
