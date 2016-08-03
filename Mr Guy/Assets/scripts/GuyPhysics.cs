@@ -104,7 +104,7 @@ public class GuyPhysics : MonoBehaviour
         if (onGround || holdingRope)
         {
             if (guyAnimation)
-                guyAnimation.SetMidair(false, 0);
+                guyAnimation.SetMidair(false, false);
 
             // You can jump again
             jumpForgiving = JUMP_FORGIVENESS;
@@ -114,7 +114,7 @@ public class GuyPhysics : MonoBehaviour
         else
         {
             if (guyAnimation)
-                guyAnimation.SetMidair(true, Mathf.Clamp(rigidbody.velocity.y, -5, 5) / 5f + 0.5f);
+                guyAnimation.SetMidair(rigidbody.velocity.y > 0, rigidbody.velocity.y <= 0);
         }
 
         // Make sure you can't stand/roll up walls

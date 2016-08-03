@@ -106,13 +106,12 @@ public class GuyAnimation : MonoBehaviour
         anim.SetBool("Swimming", swimming);
     }
 
-    public void SetMidair(bool midair, float amount)
+    public void SetMidair(bool jumping, bool falling)
     {
-        anim.SetBool("Midair", midair);
-        if (midair && !crouching && !swimming)
-            anim.Play("guy_jump", 0, 1 - amount);
-        else
-            anim.speed = 1;
+        if (jumping && falling)
+            Debug.LogError("Jumping and falling at the same time! Bad news!");
+        anim.SetBool("Jumping", jumping);
+        anim.SetBool("Falling", falling);
     }
 
     public void SetHoldingRope(bool holdingRope)
