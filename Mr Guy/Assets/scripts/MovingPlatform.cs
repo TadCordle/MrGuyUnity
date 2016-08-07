@@ -34,8 +34,13 @@ public class MovingPlatform : MonoBehaviour
         {
             if (targetDist > SlowDownDist)
             {
-                Vector2 accel = MaxSpeed * MaxSpeed / (2 * SlowDownDist) * dir;
-                rigidbody.velocity += accel * Time.fixedDeltaTime;
+                if (SlowDownDist > 0)
+                {
+                    Vector2 accel = MaxSpeed * MaxSpeed / (2 * SlowDownDist) * dir;
+                    rigidbody.velocity += accel * Time.fixedDeltaTime;
+                }
+                else
+                    rigidbody.velocity = MaxSpeed * dir;
             }
             else
             {
