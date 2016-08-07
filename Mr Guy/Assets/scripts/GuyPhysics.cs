@@ -38,6 +38,7 @@ public class GuyPhysics : MonoBehaviour
     public bool IsHoldingRope { get { return holdingRope; } }
     public bool ClimbingUp { get; set; }
     public bool ClimbingDown { get; set; }
+    public bool Dead { get { return dead; } }
 
     private bool swimming;
     private float swimTime;
@@ -58,6 +59,7 @@ public class GuyPhysics : MonoBehaviour
     private float jumpForgiving;
 
     public bool crouched;
+    private bool dead;
 
     public GameObject ropeCollision;
     public HingeJoint2D ropeHinge;
@@ -124,33 +126,36 @@ public class GuyPhysics : MonoBehaviour
         // Stand straight up
         float closestRotation = transform.localRotation.eulerAngles.z;
         closestRotation = closestRotation > 180 ? closestRotation - 360 : closestRotation;
-        if (!crouched)
+        if (!crouched && !dead)
             rigidbody.MoveRotation(Mathf.Lerp(closestRotation, 0, 0.5f));
         rigidbody.gravityScale = 1f;
 
         // Handle horizontal movement
-        if (MovingLeft)
-            if (MovingRight)
-                StopMoving();
+        if (!dead)
+        {
+            if (MovingLeft)
+                if (MovingRight)
+                    StopMoving();
+                else
+                    MoveLeft();
+            else if (MovingRight)
+                MoveRight();
             else
-                MoveLeft();
-        else if (MovingRight)
-            MoveRight();
-        else
-            StopMoving();
+                StopMoving();
 
-        SetCrouch(Crouching);
-        
+            SetCrouch(Crouching);
+
+            if (ClimbingUp)
+                ClimbUpRope();
+            if (ClimbingDown)
+                ClimbDownRope();
+            if (!ClimbingUp && !ClimbingDown && guyAnimation)
+                guyAnimation.SetClimbDir(0);
+        }
+
         // Disable upper colliders while crouching
         collider_head.isTrigger = collider_torso.isTrigger = crouched || Mathf.Abs(closestRotation) > 40f;
         
-        if (ClimbingUp)
-            ClimbUpRope();
-        if (ClimbingDown)
-            ClimbDownRope();
-        if (!ClimbingUp && !ClimbingDown && guyAnimation)
-            guyAnimation.SetClimbDir(0);
-
         if (climbTime > 0f)
         {
             // Climb to next rope segment
@@ -193,7 +198,7 @@ public class GuyPhysics : MonoBehaviour
                 rigidbody.velocity = new Vector2(rigidbody.velocity.x, -MAX_SWIM_VSPEED * (crouched ? 2.5f : 1f));
         }
 
-        if (Jumping)
+        if (Jumping && !dead)
         {
             Jump();
         }
@@ -453,6 +458,18 @@ public class GuyPhysics : MonoBehaviour
         {
             guyAnimation.SetCrouch(crouched);
         }
+    }
+
+    public void Die()
+    {
+        // TODO: Fix ragdoll when facing left
+        MoveRight();
+
+        dead = true;
+        SetCrouch(false);
+        UngrabRope();
+        if (guyAnimation)
+            guyAnimation.SetPhysicsEnabled(true);
     }
 
     public bool CanStandUp()

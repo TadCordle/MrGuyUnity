@@ -33,6 +33,6 @@ public class GuyControls : MonoBehaviour
             SceneManager.LoadScene(SceneManager.GetSceneAt(0).name);
 
         if (Input.GetKeyDown(KeyCode.K))
-            GetComponentInChildren<GuyAnimation>().SetPhysicsEnabled(true);
+            guy.Die();
     }
 }

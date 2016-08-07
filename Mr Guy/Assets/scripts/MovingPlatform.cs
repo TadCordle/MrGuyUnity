@@ -24,7 +24,7 @@ public class MovingPlatform : MonoBehaviour
 	}
 	
 	// Update is called once per frame
-	void Update ()
+	void FixedUpdate ()
     {
         Vector2 targetPos = (cycle == 1 ? pos2 : pos1);
         float targetDist = (targetPos - rigidbody.position).magnitude;
@@ -35,12 +35,12 @@ public class MovingPlatform : MonoBehaviour
             if (targetDist > SlowDownDist)
             {
                 Vector2 accel = MaxSpeed * MaxSpeed / (2 * SlowDownDist) * dir;
-                rigidbody.velocity += accel * Time.deltaTime;
+                rigidbody.velocity += accel * Time.fixedDeltaTime;
             }
             else
             {
                 Vector2 decel = rigidbody.velocity.sqrMagnitude / (2 * targetDist) * dir;
-                rigidbody.velocity -= decel * Time.deltaTime;
+                rigidbody.velocity -= decel * Time.fixedDeltaTime;
             }
 
             if (rigidbody.velocity.magnitude > MaxSpeed)
@@ -49,7 +49,7 @@ public class MovingPlatform : MonoBehaviour
         else
         {
             rigidbody.velocity = Vector2.zero;
-            waitTime -= Time.deltaTime;
+            waitTime -= Time.fixedDeltaTime;
         }
 
         if (targetDist <= 0.01f)
