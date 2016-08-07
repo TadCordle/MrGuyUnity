@@ -8,7 +8,7 @@ public class GuyPhysics : MonoBehaviour
     public const float MOVE_ACCEL_GROUND = 100f;
     public const float MAX_HSPEED_GROUND = 9f;
     public const float MOVE_ACCEL_AIR = 80f;
-    public const float MAX_HSPEED_AIR = 6f;
+    public const float MAX_HSPEED_AIR = 7f;
     public const float MOVE_ACCEL_SWIMMING = 55f;
     public const float MAX_HSPEED_SWIMMING = 7f;
     public const float MOVE_ACCEL_SWING = 40f;
@@ -52,6 +52,7 @@ public class GuyPhysics : MonoBehaviour
     private bool rightTouchingGround, leftTouchingGround;
     private Vector2 currGroundDir;
     private Vector2 currGroundVelocity;
+    private bool wasOnMovingPlatform;
 
     private bool jumping, jumpFlag;
     private float jumpForgiving;
@@ -86,12 +87,7 @@ public class GuyPhysics : MonoBehaviour
         swimTime = MAX_SWIM_TIME;
         
         onGround = OnGround();
-
-        jumping = false;
-        jumpFlag = false;
         jumpForgiving = JUMP_FORGIVENESS;
-
-        crouched = false;
     }
 	
     void Update()
@@ -184,9 +180,9 @@ public class GuyPhysics : MonoBehaviour
         // Decelerate to speed cap if not midair
         if (onGround || swimming)
         {
-            if (rigidbody.velocity.x < -MAX_HSPEED_GROUND)
+            if (rigidbody.velocity.x < -MAX_HSPEED_GROUND + (crouched ? 0 : currGroundVelocity.x))
                 rigidbody.AddForce(Vector2.right * (swimming ? MOVE_ACCEL_SWIMMING : (crouched ? MOVE_ACCEL_GROUND / 5f : MOVE_ACCEL_GROUND)) / 3f);
-            else if (rigidbody.velocity.x > MAX_HSPEED_GROUND)
+            else if (rigidbody.velocity.x > MAX_HSPEED_GROUND + (crouched ? 0 : currGroundVelocity.x))
                 rigidbody.AddForce(Vector2.left * (swimming ? MOVE_ACCEL_SWIMMING : (crouched ? MOVE_ACCEL_GROUND / 5f : MOVE_ACCEL_GROUND)) / 3f);
         }
 
@@ -226,7 +222,8 @@ public class GuyPhysics : MonoBehaviour
         {
             if (guyAnimation)
                 guyAnimation.SetFacingLeft(true);
-            float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            wasOnMovingPlatform = false;
+            float maxSpeed = onGround ? MAX_HSPEED_GROUND - (crouched ? 0 : currGroundVelocity.x) : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
             Vector2 actualDirection = (leftTouchingGround || onGround) && currGroundDir.y / currGroundDir.x <= 0.9f ? -currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.left;
             if (crouched)
             {
@@ -256,7 +253,8 @@ public class GuyPhysics : MonoBehaviour
         {
             if (guyAnimation)
                 guyAnimation.SetFacingLeft(false);
-            float maxSpeed = onGround ? MAX_HSPEED_GROUND : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
+            wasOnMovingPlatform = false;
+            float maxSpeed = onGround ? MAX_HSPEED_GROUND + (crouched ? 0 : currGroundVelocity.x) : (swimming ? MAX_HSPEED_SWIMMING : MAX_HSPEED_AIR);
             Vector2 actualDirection = (rightTouchingGround || onGround) && currGroundDir.y / currGroundDir.x >= -0.9f ? currGroundDir * Mathf.Pow(currGroundDir.x, 4) : Vector2.right;
             if (crouched)
             {
@@ -292,14 +290,17 @@ public class GuyPhysics : MonoBehaviour
             if (!jumping && !crouched)
                 rigidbody.gravityScale = 0f;
             if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f)
-                rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, jumping ? rigidbody.velocity.y : 0), 0.5f);
+                rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2((crouched ? 0 : currGroundVelocity.x), jumping ? rigidbody.velocity.y : (crouched ? 0 : currGroundVelocity.y)), 0.5f);
         }
         else
         {
-            if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f && !holdingRope)
-                rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, rigidbody.velocity.y), 0.3f);
-            else
-                rigidbody.AddForce(-currGroundDir * MOVE_ACCEL_GROUND / 10f);
+            if (!wasOnMovingPlatform)
+            {
+                if (Mathf.Abs(currGroundDir.y / currGroundDir.x) <= 0.9f && !holdingRope)
+                    rigidbody.velocity = Vector2.Lerp(rigidbody.velocity, new Vector2(0, rigidbody.velocity.y), 0.3f);
+                else
+                    rigidbody.AddForce(-currGroundDir * MOVE_ACCEL_GROUND / 10f);
+            }
         }
     }
 
@@ -421,6 +422,7 @@ public class GuyPhysics : MonoBehaviour
                     normals = Mathf.Abs(h.normal.x / h.normal.y);
                     currGroundDir = new Vector2(h.normal.normalized.y, -h.normal.normalized.x);
                     currGroundVelocity = h.rigidbody != null ? h.rigidbody.velocity : Vector2.zero;
+                    wasOnMovingPlatform = currGroundVelocity.sqrMagnitude >= 0.01f;
                 }
             }
         }
